@@ -7,6 +7,6 @@ from .views import IngredientViewSet
 router_v1 = DefaultRouter()
 router_v1.register(r'ingredients', IngredientViewSet)
 
-urlpatterns = [
+urlpatterns = (
     path('', include(router_v1.urls)),
-]
+)

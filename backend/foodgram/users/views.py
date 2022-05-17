@@ -6,21 +6,23 @@ from djoser.views import UserViewSet
 from rest_framework import exceptions, status
 from rest_framework.decorators import action
 from rest_framework.permissions import (IsAuthenticated,
-                                        IsAuthenticatedOrReadOnly,)
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
 from .models import Subscription
+from .pagination import CustomPageNumberPagination
 from .serializers import SubscriptionSerializer
 
 User = get_user_model()
 
 
 class CustomUserViewSet(UserViewSet):
-    permission_classes = (IsAuthenticatedOrReadOnly, )
+    permission_classes = (IsAuthenticatedOrReadOnly,)
+    pagination_class = CustomPageNumberPagination
 
     @action(
         detail=False,
-        methods=['get'],
+        methods=('get',),
         serializer_class=SubscriptionSerializer,
         permission_classes=(IsAuthenticated, )
     )
@@ -28,7 +30,7 @@ class CustomUserViewSet(UserViewSet):
         user = self.request.user
         user_subscriptions = user.subscribes.all()
         authors = [item.author.id for item in user_subscriptions]
-        queryset = User.objects.filter(pk__in=authors)
+        queryset = User.objects.all().filter(pk__in=authors)
         paginated_queryset = self.paginate_queryset(queryset)
         serializer = self.get_serializer(paginated_queryset, many=True)
 
@@ -36,19 +38,19 @@ class CustomUserViewSet(UserViewSet):
 
     @action(
         detail=True,
-        methods=['post', 'delete'],
+        methods=('post', 'delete'),
         serializer_class=SubscriptionSerializer
     )
     def subscribe(self, request, id=None):
         user = self.request.user
-        author = User.objects.get(pk=id)
+        author = get_object_or_404(User, pk=id)
 
         if self.request.method == 'POST':
             if user == author:
                 raise exceptions.ValidationError(
                     'Подписка на самого себя запрещена.'
                 )
-            if Subscription.objects.filter(
+            if Subscription.objects.all().filter(
                 user=user,
                 author=author
             ).exists():
@@ -60,7 +62,7 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
-            if not Subscription.objects.filter(
+            if not Subscription.objects.all().filter(
                 user=user,
                 author=author
             ).exists():

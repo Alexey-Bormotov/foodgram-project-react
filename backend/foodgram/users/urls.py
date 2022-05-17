@@ -7,7 +7,7 @@ from .views import CustomUserViewSet
 router_v1 = DefaultRouter()
 router_v1.register(r'users', CustomUserViewSet, basename='users')
 
-urlpatterns = [
+urlpatterns = (
     path(r'', include(router_v1.urls)),
-    path(r'auth/', include('djoser.urls.authtoken')),
-]
+    path(r'auth/', include('djoser.urls.authtoken'))
+)

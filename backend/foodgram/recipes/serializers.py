@@ -2,12 +2,13 @@ import base64
 
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
+from django.shortcuts import get_object_or_404
 from rest_framework import exceptions, serializers
 
 from .models import Favorite, Recipe, RecipeIngredients, ShoppingCart
-from tags.models import Tag
-from ingredients.models import Ingredient
 
+from ingredients.models import Ingredient
+from tags.models import Tag
 from tags.serializers import TagSerializer
 from users.serializers import CustomUserSerializer
 
@@ -15,9 +16,6 @@ User = get_user_model()
 
 
 class ImageBase64Field(serializers.Field):
-    def to_representation(self, value):
-        return value
-
     def to_internal_value(self, data):
         data = data.replace('data:image/png;base64,', '')
         imagedata = base64.b64decode(data)
@@ -53,7 +51,7 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
 
 class CreateUpdateRecipeIngredientsSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
-    amount = serializers.IntegerField(validators=[MinValueValidator(1), ])
+    amount = serializers.IntegerField(validators=(MinValueValidator(1),))
 
     class Meta:
         model = Ingredient
@@ -68,7 +66,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_in_shopping_cart = serializers.SerializerMethodField()
 
     def get_ingredients(self, obj):
-        ingredients = RecipeIngredients.objects.filter(recipe=obj)
+        ingredients = RecipeIngredients.objects.all().filter(recipe=obj)
         serializer = RecipeIngredientsSerializer(ingredients, many=True)
 
         return serializer.data
@@ -79,7 +77,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             return False
 
-        return Favorite.objects.filter(user=user, recipe=obj).exists()
+        return Favorite.objects.all().filter(user=user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
@@ -87,11 +85,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             return False
 
-        return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
+        return ShoppingCart.objects.all().filter(user=user, recipe=obj).exists()
 
     class Meta:
         model = Recipe
-        exclude = ('pub_date', )
+        exclude = ('pub_date',)
 
 
 class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
@@ -103,7 +101,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     ingredients = CreateUpdateRecipeIngredientsSerializer(many=True)
     image = ImageBase64Field()
     cooking_time = serializers.IntegerField(
-        validators=[MinValueValidator(1), ]
+        validators=(MinValueValidator(1),)
     )
 
     def validate_tags(self, value):
@@ -132,7 +130,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
         for ingredient in ingredients:
             amount = ingredient['amount']
-            ingredient = Ingredient.objects.get(pk=ingredient['id'])
+            ingredient = get_object_or_404(Ingredient, pk=ingredient['id'])
 
             RecipeIngredients.objects.create(
                 recipe=recipe,
@@ -161,7 +159,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
             for ingredient in ingredients:
                 amount = ingredient['amount']
-                ingredient = Ingredient.objects.get(pk=ingredient['id'])
+                ingredient = get_object_or_404(Ingredient, pk=ingredient['id'])
 
                 RecipeIngredients.objects.update_or_create(
                     recipe=instance,
@@ -183,7 +181,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recipe
-        exclude = ('pub_date', )
+        exclude = ('pub_date',)
 
 
 class ShortRecipeSerializer(serializers.ModelSerializer):

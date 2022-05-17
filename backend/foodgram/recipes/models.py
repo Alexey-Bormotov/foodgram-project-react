@@ -27,7 +27,7 @@ class Recipe(models.Model):
         help_text='Игредиенты для рецепта',
     )
     cooking_time = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1)],
+        validators=(MinValueValidator(1),),
         verbose_name='Время приготовления (в минутах)',
         help_text='Время приготовления (в минутах)',
     )
@@ -55,7 +55,7 @@ class Recipe(models.Model):
     )
 
     class Meta:
-        ordering = ['-pub_date']
+        ordering = ('-pub_date',)
         verbose_name = 'рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -75,7 +75,7 @@ class RecipeIngredients(models.Model):
         verbose_name='Ингредиент'
     )
     amount = models.PositiveSmallIntegerField(
-        validators=[MinValueValidator(1)],
+        validators=(MinValueValidator(1),),
         verbose_name='Количество'
     )
 
@@ -125,12 +125,12 @@ class Favorite(models.Model):
         verbose_name = 'избранное'
         verbose_name_plural = 'Избранное'
 
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
+                fields=('user', 'recipe'),
                 name='unique_favorite_recipe'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'Рецепт {self.recipe} в избранном у {self.user}'
@@ -154,12 +154,12 @@ class ShoppingCart(models.Model):
         verbose_name = 'список покупок'
         verbose_name_plural = 'Список покупок'
 
-        constraints = [
+        constraints = (
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
+                fields=('user', 'recipe'),
                 name='unique_shopping_list_recipe'
-            )
-        ]
+            ),
+        )
 
     def __str__(self):
         return f'Рецепт {self.recipe} в списке покупок у {self.user}'

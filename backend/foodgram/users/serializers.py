@@ -17,7 +17,7 @@ class CustomUserSerializer(UserSerializer):
         if user.is_anonymous:
             return False
 
-        return Subscription.objects.filter(user=user, author=obj).exists()
+        return Subscription.objects.all().filter(user=user, author=obj).exists()
 
     class Meta:
         model = User
@@ -43,7 +43,7 @@ class SubscriptionSerializer(CustomUserSerializer):
         return ShortRecipeSerializer
 
     def get_recipes(self, obj):
-        author_recipes = Recipe.objects.filter(author=obj)
+        author_recipes = Recipe.objects.all().filter(author=obj)
 
         if 'recipes_limit' in self.context.get('request').GET:
             recipes_limit = self.context.get('request').GET['recipes_limit']
@@ -60,7 +60,7 @@ class SubscriptionSerializer(CustomUserSerializer):
         return []
 
     def get_recipes_count(self, obj):
-        recipes_count = Recipe.objects.filter(author=obj).count()
+        recipes_count = Recipe.objects.all().filter(author=obj).count()
 
         return recipes_count
 

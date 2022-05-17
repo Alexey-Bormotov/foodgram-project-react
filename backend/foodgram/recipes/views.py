@@ -11,36 +11,36 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .filters import RecipeFilter
-
 from .models import Favorite, Recipe, RecipeIngredients, ShoppingCart
-from ingredients.models import Ingredient
-
 from .permissions import IsAuthorOrAdminPermission
-
 from .serializers import (RecipeSerializer,
                           RecipeCreateUpdateSerializer,
-                          ShortRecipeSerializer,)
+                          ShortRecipeSerializer)
+
+from ingredients.models import Ingredient
+from users.pagination import CustomPageNumberPagination
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    permission_classes = (IsAuthorOrAdminPermission, )
-    filter_backends = (DjangoFilterBackend, )
+    permission_classes = (IsAuthorOrAdminPermission,)
+    filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipeFilter
+    pagination_class = CustomPageNumberPagination
 
     def get_serializer_class(self):
-        if self.action in ['create', 'partial_update']:
+        if self.action in ('create', 'partial_update'):
             return RecipeCreateUpdateSerializer
 
         return RecipeSerializer
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True, methods=('post', 'delete'))
     def favorite(self, request, pk=None):
         user = self.request.user
         recipe = get_object_or_404(Recipe, pk=pk)
 
         if self.request.method == 'POST':
-            if Favorite.objects.filter(
+            if Favorite.objects.all().filter(
                 user=user,
                 recipe=recipe
             ).exists():
@@ -55,7 +55,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
-            if not Favorite.objects.filter(
+            if not Favorite.objects.all().filter(
                 user=user,
                 recipe=recipe
             ).exists():
@@ -68,13 +68,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True, methods=('post', 'delete'))
     def shopping_cart(self, request, pk=None):
         user = self.request.user
         recipe = get_object_or_404(Recipe, pk=pk)
 
         if self.request.method == 'POST':
-            if ShoppingCart.objects.filter(
+            if ShoppingCart.objects.all().filter(
                 user=user,
                 recipe=recipe
             ).exists():
@@ -91,7 +91,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
-            if not ShoppingCart.objects.filter(
+            if not ShoppingCart.objects.all().filter(
                 user=user,
                 recipe=recipe
             ).exists():
@@ -110,13 +110,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=False,
-        methods=['get'],
-        permission_classes=(IsAuthenticated, )
+        methods=('get',),
+        permission_classes=(IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
-        shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
+        shopping_cart = ShoppingCart.objects.all().filter(user=self.request.user)
         recipes = [item.recipe.id for item in shopping_cart]
-        buy_list = RecipeIngredients.objects.filter(
+        buy_list = RecipeIngredients.objects.all().filter(
             recipe__in=recipes
         ).values(
             'ingredient'
