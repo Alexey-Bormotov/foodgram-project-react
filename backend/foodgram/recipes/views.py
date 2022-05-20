@@ -1,24 +1,22 @@
 import os
 
-from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
-
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import exceptions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from ingredients.models import Ingredient
+from users.pagination import CustomPageNumberPagination
+
 from .filters import RecipeFilter
 from .models import Favorite, Recipe, RecipeIngredients, ShoppingCart
 from .permissions import IsAuthorOrAdminPermission
-from .serializers import (RecipeSerializer,
-                          RecipeCreateUpdateSerializer,
+from .serializers import (RecipeCreateUpdateSerializer, RecipeSerializer,
                           ShortRecipeSerializer)
-
-from ingredients.models import Ingredient
-from users.pagination import CustomPageNumberPagination
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -40,7 +38,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         recipe = get_object_or_404(Recipe, pk=pk)
 
         if self.request.method == 'POST':
-            if Favorite.objects.all().filter(
+            if Favorite.objects.filter(
                 user=user,
                 recipe=recipe
             ).exists():
@@ -55,7 +53,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
-            if not Favorite.objects.all().filter(
+            if not Favorite.objects.filter(
                 user=user,
                 recipe=recipe
             ).exists():
@@ -68,13 +66,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     @action(detail=True, methods=('post', 'delete'))
     def shopping_cart(self, request, pk=None):
         user = self.request.user
         recipe = get_object_or_404(Recipe, pk=pk)
 
         if self.request.method == 'POST':
-            if ShoppingCart.objects.all().filter(
+            if ShoppingCart.objects.filter(
                 user=user,
                 recipe=recipe
             ).exists():
@@ -91,7 +91,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
-            if not ShoppingCart.objects.all().filter(
+            if not ShoppingCart.objects.filter(
                 user=user,
                 recipe=recipe
             ).exists():
@@ -108,15 +108,17 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
             return Response(status=status.HTTP_204_NO_CONTENT)
 
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     @action(
         detail=False,
         methods=('get',),
         permission_classes=(IsAuthenticated,)
     )
     def download_shopping_cart(self, request):
-        shopping_cart = ShoppingCart.objects.all().filter(user=self.request.user)
+        shopping_cart = ShoppingCart.objects.filter(user=self.request.user)
         recipes = [item.recipe.id for item in shopping_cart]
-        buy_list = RecipeIngredients.objects.all().filter(
+        buy_list = RecipeIngredients.objects.filter(
             recipe__in=recipes
         ).values(
             'ingredient'

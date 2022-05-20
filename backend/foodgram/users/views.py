@@ -1,8 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-
 from djoser.views import UserViewSet
-
 from rest_framework import exceptions, status
 from rest_framework.decorators import action
 from rest_framework.permissions import (IsAuthenticated,
@@ -30,7 +28,7 @@ class CustomUserViewSet(UserViewSet):
         user = self.request.user
         user_subscriptions = user.subscribes.all()
         authors = [item.author.id for item in user_subscriptions]
-        queryset = User.objects.all().filter(pk__in=authors)
+        queryset = User.objects.filter(pk__in=authors)
         paginated_queryset = self.paginate_queryset(queryset)
         serializer = self.get_serializer(paginated_queryset, many=True)
 
@@ -50,7 +48,7 @@ class CustomUserViewSet(UserViewSet):
                 raise exceptions.ValidationError(
                     'Подписка на самого себя запрещена.'
                 )
-            if Subscription.objects.all().filter(
+            if Subscription.objects.filter(
                 user=user,
                 author=author
             ).exists():
@@ -62,7 +60,7 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         if self.request.method == 'DELETE':
-            if not Subscription.objects.all().filter(
+            if not Subscription.objects.filter(
                 user=user,
                 author=author
             ).exists():
@@ -78,3 +76,5 @@ class CustomUserViewSet(UserViewSet):
             subscription.delete()
 
             return Response(status=status.HTTP_204_NO_CONTENT)
+
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)

@@ -5,12 +5,12 @@ from django.core.validators import MinValueValidator
 from django.shortcuts import get_object_or_404
 from rest_framework import exceptions, serializers
 
-from .models import Favorite, Recipe, RecipeIngredients, ShoppingCart
-
 from ingredients.models import Ingredient
 from tags.models import Tag
 from tags.serializers import TagSerializer
 from users.serializers import CustomUserSerializer
+
+from .models import Favorite, Recipe, RecipeIngredients, ShoppingCart
 
 User = get_user_model()
 
@@ -66,7 +66,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     is_in_shopping_cart = serializers.SerializerMethodField()
 
     def get_ingredients(self, obj):
-        ingredients = RecipeIngredients.objects.all().filter(recipe=obj)
+        ingredients = RecipeIngredients.objects.filter(recipe=obj)
         serializer = RecipeIngredientsSerializer(ingredients, many=True)
 
         return serializer.data
@@ -77,7 +77,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             return False
 
-        return Favorite.objects.all().filter(user=user, recipe=obj).exists()
+        return Favorite.objects.filter(user=user, recipe=obj).exists()
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
@@ -85,7 +85,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         if user.is_anonymous:
             return False
 
-        return ShoppingCart.objects.all().filter(user=user, recipe=obj).exists()
+        return ShoppingCart.objects.filter(user=user, recipe=obj).exists()
 
     class Meta:
         model = Recipe
@@ -141,21 +141,13 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         return recipe
 
     def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.text = validated_data.get('text', instance.text)
-        instance.image = validated_data.get('image', instance.image)
-        instance.cooking_time = validated_data.get(
-            'cooking_time',
-            instance.cooking_time
-        )
-
-        if 'tags' in self.initial_data:
-            tags = validated_data.pop('tags')
+        tags = validated_data.pop('tags', None)
+        if tags is not None:
             instance.tags.set(tags)
 
-        if 'ingredients' in self.initial_data:
+        ingredients = validated_data.pop('ingredients', None)
+        if ingredients is not None:
             instance.ingredients.clear()
-            ingredients = validated_data.pop('ingredients')
 
             for ingredient in ingredients:
                 amount = ingredient['amount']
@@ -167,9 +159,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
                     defaults={'amount': amount}
                 )
 
-        instance.save()
-
-        return instance
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         serializer = RecipeSerializer(
