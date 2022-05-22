@@ -74,9 +74,10 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         passphrase: ${{ secrets.PASSPHRASE }}
         script: |
-          sudo docker-compose pull diablik666/foodgram_backend diablik666/foodgram_frontend
           sudo docker-compose stop
           sudo docker-compose rm -f backend frontend
+          sudo docker image rm diablik666/foodgram_backend diablik666/foodgram_frontend
+          sudo docker-compose pull backend frontend
           touch .env
           echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
           echo DB_NAME=${{ secrets.DB_NAME }} >> .env
