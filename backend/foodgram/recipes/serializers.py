@@ -3,13 +3,14 @@ import base64
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.shortcuts import get_object_or_404
-from ingredients.models import Ingredient
 from rest_framework import exceptions, serializers
+from rest_framework.validators import UniqueValidator
+
+from .models import Favorite, Recipe, RecipeIngredients, ShoppingCart
+from ingredients.models import Ingredient
 from tags.models import Tag
 from tags.serializers import TagSerializer
 from users.serializers import CustomUserSerializer
-
-from .models import Favorite, Recipe, RecipeIngredients, ShoppingCart
 
 User = get_user_model()
 
@@ -21,7 +22,7 @@ class ImageBase64Field(serializers.Field):
 
         user = self.context['request'].user
         recipe_name = self.context['request'].data['name']
-        filename = f'{user}_{recipe_name}_image.png'
+        filename = f'{user.username}_{recipe_name}_image.png'
 
         with open('media/recipes/' + filename, 'wb') as imagefile:
             imagefile.write(imagedata)
@@ -30,9 +31,11 @@ class ImageBase64Field(serializers.Field):
 
 
 class RecipeIngredientsSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField()
-    name = serializers.SerializerMethodField()
-    measurement_unit = serializers.SerializerMethodField()
+    id = serializers.SerializerMethodField(method_name='get_id')
+    name = serializers.SerializerMethodField(method_name='get_name')
+    measurement_unit = serializers.SerializerMethodField(
+        method_name='get_measurement_unit'
+    )
 
     def get_id(self, obj):
         return obj.ingredient.id
@@ -49,8 +52,22 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
 
 
 class CreateUpdateRecipeIngredientsSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField()
-    amount = serializers.IntegerField(validators=(MinValueValidator(1),))
+    id = serializers.IntegerField(
+        validators=(
+            UniqueValidator(
+                queryset=Ingredient.objects.all(),
+                message='У рецепта не может быть два одинаковых ингредиента.'
+            ),
+        )
+    )
+    amount = serializers.IntegerField(
+        validators=(
+            MinValueValidator(
+                1,
+                message='Количество ингредиента должно быть 1 или более.'
+            ),
+        )
+    )
 
     class Meta:
         model = Ingredient
@@ -60,9 +77,15 @@ class CreateUpdateRecipeIngredientsSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     author = CustomUserSerializer(read_only=True)
     tags = TagSerializer(many=True)
-    ingredients = serializers.SerializerMethodField()
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
+    ingredients = serializers.SerializerMethodField(
+        method_name='get_ingredients'
+    )
+    is_favorited = serializers.SerializerMethodField(
+        method_name='get_is_favorited'
+    )
+    is_in_shopping_cart = serializers.SerializerMethodField(
+        method_name='get_is_in_shopping_cart'
+    )
 
     def get_ingredients(self, obj):
         ingredients = RecipeIngredients.objects.filter(recipe=obj)
@@ -100,7 +123,12 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
     ingredients = CreateUpdateRecipeIngredientsSerializer(many=True)
     image = ImageBase64Field()
     cooking_time = serializers.IntegerField(
-        validators=(MinValueValidator(1),)
+        validators=(
+            MinValueValidator(
+                1,
+                message='Время приготовления должно быть 1 или более.'
+            ),
+        )
     )
 
     def validate_tags(self, value):
