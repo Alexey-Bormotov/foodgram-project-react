@@ -1,5 +1,3 @@
-import os
-
 from django.db.models import Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
@@ -125,26 +123,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
             amount=Sum('amount')
         )
 
-        filename = f'{self.request.user.username}_buy_list.txt'
-
-        if not os.path.isdir('media/buy_lists'):
-            os.mkdir('media/buy_lists')
-
-        with open(f'media/buy_lists/{filename}', 'w') as textfile:
-            textfile.write('Список покупок с сайта Foodgram:\n\n')
-
-            for item in buy_list:
-                ingredient = Ingredient.objects.get(pk=item['ingredient'])
-                amount = item['amount']
-                textfile.write(
-                    f'{ingredient.name}, {amount} '
-                    f'{ingredient.measurement_unit}\n'
-                )
-
-        with open(f'media/buy_lists/{filename}', 'r') as textfile:
-            response = HttpResponse(textfile.read(), content_type="text/txt")
-            response['Content-Disposition'] = (
-                'attachment; filename=' + filename
+        buy_list_text = 'Список покупок с сайта Foodgram:\n\n'
+        for item in buy_list:
+            ingredient = Ingredient.objects.get(pk=item['ingredient'])
+            amount = item['amount']
+            buy_list_text += (
+                f'{ingredient.name}, {amount} '
+                f'{ingredient.measurement_unit}\n'
             )
+
+        response = HttpResponse(buy_list_text, content_type="text/plain")
+        response['Content-Disposition'] = (
+            'attachment; filename=shopping-list.txt'
+        )
 
         return response

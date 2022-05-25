@@ -1,10 +1,8 @@
-import base64
-
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator
 from django.shortcuts import get_object_or_404
+from drf_extra_fields.fields import Base64ImageField
 from rest_framework import exceptions, serializers
-from rest_framework.validators import UniqueValidator
 
 from .models import Favorite, Recipe, RecipeIngredients, ShoppingCart
 from ingredients.models import Ingredient
@@ -13,21 +11,6 @@ from tags.serializers import TagSerializer
 from users.serializers import CustomUserSerializer
 
 User = get_user_model()
-
-
-class ImageBase64Field(serializers.Field):
-    def to_internal_value(self, data):
-        data = data.replace('data:image/png;base64,', '')
-        imagedata = base64.b64decode(data)
-
-        user = self.context['request'].user
-        recipe_name = self.context['request'].data['name']
-        filename = f'{user.username}_{recipe_name}_image.png'
-
-        with open('media/recipes/' + filename, 'wb') as imagefile:
-            imagefile.write(imagedata)
-
-        return 'recipes/' + filename
 
 
 class RecipeIngredientsSerializer(serializers.ModelSerializer):
@@ -52,14 +35,7 @@ class RecipeIngredientsSerializer(serializers.ModelSerializer):
 
 
 class CreateUpdateRecipeIngredientsSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(
-        validators=(
-            UniqueValidator(
-                queryset=Ingredient.objects.all(),
-                message='У рецепта не может быть два одинаковых ингредиента.'
-            ),
-        )
-    )
+    id = serializers.IntegerField()
     amount = serializers.IntegerField(
         validators=(
             MinValueValidator(
@@ -121,7 +97,7 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
         many=True
     )
     ingredients = CreateUpdateRecipeIngredientsSerializer(many=True)
-    image = ImageBase64Field()
+    image = Base64ImageField()
     cooking_time = serializers.IntegerField(
         validators=(
             MinValueValidator(
@@ -144,6 +120,13 @@ class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
             raise exceptions.ValidationError(
                 'Нужно добавить хотя бы один ингредиент.'
             )
+
+        ingredients = [item['id'] for item in value]
+        for ingredient in ingredients:
+            if ingredients.count(ingredient) > 1:
+                raise exceptions.ValidationError(
+                    'У рецепта не может быть два одинаковых ингредиента.'
+                )
 
         return value
 
