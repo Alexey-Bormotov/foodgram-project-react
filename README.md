@@ -1,12 +1,4 @@
-__Для ревьюера:__  
-Хост: http://diablikfoodgram.ddns.net/ или http://178.154.195.151/  
-Пользователь: admin  
-Почта: admin@ya.ru  
-Пароль: 123  
-
-![yamdb_workflow](https://github.com/DIABLik666/foodgram-project-react/workflows/foodgram_workflow/badge.svg)
-
-# Проект "Продуктовый помошник" (Foodgram) в контейнерах Docker
+# "Продуктовый помошник" (Foodgram)
 
 ## 1. [Описание](#1)
 ## 2. [Установка Docker (на платформе Ubuntu)](#2)
@@ -26,12 +18,6 @@ __Для ревьюера:__
   - добавлять рецепты других пользователей в "Избранное" и в "Корзину"
   - подписываться на других пользователей
   - скачать список ингредиентов для рецептов, добавленных в "Корзину"
-
-Перед запуском необходимо склонировать проект:
-```bash
-HTTPS: git clone https://github.com/DIABLik666/foodgram-project-react.git
-SSH: git clone git@github.com:DIABLik666/foodgram-project-react.git
-```
 
 ---
 ## 2. Установка Docker (на платформе Ubuntu) <a id=2></a>
@@ -111,7 +97,23 @@ ALLOWED_HOSTS='Здесь указать имя или IP хоста' (Для л
 ---
 ## 4. Команды для запуска <a id=4></a>
 
-Перед запуском необходимо собрать образы для фронтенда и бэкенда.  
+Перед запуском необходимо склонировать проект:
+```bash
+HTTPS: git clone https://github.com/DIABLik666/foodgram-project-react.git
+SSH: git clone git@github.com:DIABLik666/foodgram-project-react.git
+```
+
+Развернуть виртуальное окружение:
+```bash
+python -m venv venv
+```
+
+И установить зависимости из файла requirements.txt:
+```bash
+pip install -r requirements.txt
+```
+
+Далее необходимо собрать образы для фронтенда и бэкенда.  
 Из папки "./backend/foodgram/" выполнить команду:
 ```bash
 docker build -t diablik666/foodgram_backend .
@@ -161,6 +163,8 @@ docker-compose exec backend python manage.py fill_ingredients_from_csv --path da
 ---
 ## 6. Техническая информация <a id=6></a>
 
+Стек технологий: Python 3, Django, Django Rest, React, Docker, PostgreSQL, nginx, gunicorn, Djoser.
+
 Веб-сервер: nginx (контейнер nginx)  
 Frontend фреймворк: React (контейнер frontend)  
 Backend фреймворк: Django (контейнер backend)  
@@ -175,6 +179,7 @@ API фреймворк: Django REST (контейнер backend)
 ## 7. Об авторе <a id=7></a>
 
 Бормотов Алексей Викторович  
-Python junior-разработчик  
+Python-разработчик (Backend)  
 Россия, г. Кемерово  
-E-mail для связи: di-devil@yandex.ru
+E-mail: di-devil@yandex.ru  
+Telegram: @DIABLik666
