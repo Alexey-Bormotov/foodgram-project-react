@@ -103,12 +103,19 @@ HTTPS: git clone https://github.com/DIABLik666/foodgram-project-react.git
 SSH: git clone git@github.com:DIABLik666/foodgram-project-react.git
 ```
 
-Развернуть виртуальное окружение:
+Cоздать и активировать виртуальное окружение:
 ```bash
 python -m venv venv
 ```
+```bash
+Linux: source venv/bin/activate
+Windows: source venv/Scripts/activate
+```
 
 И установить зависимости из файла requirements.txt:
+```bash
+python3 -m pip install --upgrade pip
+```
 ```bash
 pip install -r requirements.txt
 ```
